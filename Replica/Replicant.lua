@@ -225,12 +225,16 @@ function members:_flushReplicationBuffer()
 						local topLevel = false
 						local key, newSerialType, newPartialSymbolicValue, preservationId = unpack(nestedSerialized)
 						if statics._subclasses[newSerialType] ~= nil then
-							nestedSerialized = newPartialSymbolicValue[1]
-							nestedReplicant = nestedReplicant.wrapped[key]
+							if #newPartialSymbolicValue == 1 then
+								nestedSerialized = newPartialSymbolicValue[1]
+								nestedReplicant = nestedReplicant.wrapped[key]
+							else
+								topLevel = true
+							end
 						else
 							topLevel = true
 						end
-					until topLevel or not nestedReplicant
+					until topLevel or not nestedReplicant or not nestedSerialized
 					
 					if nestedReplicant then
 						if nestedReplicant:VisibleToClient(client) then
@@ -262,7 +266,9 @@ function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
 	local isLocal = self:_inLocalContext()
 	
 	self.WillUpdate:Fire(isLocal)
-	updateList[self] = true
+	if #buffer > 0 then
+		updateList[self.OnUpdate] = true
+	end
 
 	local existingByPreservationID = {}
 	for _, existing in pairs(self.wrapped) do
@@ -273,6 +279,13 @@ function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
 	
 	for _, serialized in pairs(buffer) do
 		local key, newSerialType, newPartialSymbolicValue, preservationId = unpack(serialized)
+		
+		if self.valueWillUpdateSignals[key] then
+			self.valueWillUpdateSignals[key]:Fire(isLocal)
+		end
+		if self.valueOnUpdateSignals[key] then
+			updateList[self.valueOnUpdateSignals[key]] = true
+		end
 		
 		local existing = self.wrapped[key]
 		if existing == nil then
@@ -318,8 +331,8 @@ function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
 	
 	-- Destroy/update replicants after all actions in the buffer have been completed
 	if self.context.base == self then
-		for replicant in pairs(updateList) do
-			replicant.OnUpdate:Fire(isLocal)
+		for signal in pairs(updateList) do
+			signal:Fire(isLocal)
 		end
 		
 		for replicant in pairs(destroyList) do
