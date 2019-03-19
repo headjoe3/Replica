@@ -1,6 +1,6 @@
 # Replicant
 
-Abstract class; cannot be instantiated
+Replicant is an Abstract class; it cannot be instantiated
 
 The Replicant class is the base class from which Replica's main classes inherit.
 
@@ -46,17 +46,21 @@ local myData = Replica.Map.new({
 
 # Methods
 
-* `(unknown) Get((any) key)`
+## `(unknown) Get((any) key)`
 
 Gets the value at a given key if it exists. All Replicant objects wrap some form of table that this function accesses.
 
-* `(void) Set((any) key, (any) value)`
+----
+
+## `(void) Set((any) key, (any) value)`
 
 Sets the value at a given key and replicates it if in the proper context. Specific classes may have restrictions on the types of keys or values that can be set.
 
 For example, Map only allows string keys, and Array only allows sequential integer keys.
 
-* `(void) Collate((function) callback)`
+----
+
+## `(void) Collate((function) callback)`
 
 __Warning:__ Your callback should not yield when calling Collate
 
@@ -75,7 +79,9 @@ playerData:Collate(function()
 end)
 ```
 
-* `(void) Local((function) callback)`
+----
+
+## `(void) Local((function) callback)`
 
 __Warning:__ Your callback should not yield when calling Local
 
@@ -94,51 +100,67 @@ playerData:Local(function()
 end)
 ```
 
-* `(table) Serialize([string] key)`
+----
+
+## `(table) Serialize([string] key)`
 
 Serializes the Replicant object using the Replica format, which can be stored in data stores, used in HTTP requests, or sent through remotes. The `key` argument is optional, and can generally be ignored, as it is used internally for representing changes in the replication buffer
 
-* `(table) GetConfig()`
+----
+
+## `(table) GetConfig()`
 
 Returns the current replication [Config](https://github.com/headjoe3/Replica/blob/master/docs/Config.md)
 
-* `(void) SetConfig((table) config)`
+----
+
+## `(void) SetConfig((table) config)`
 
 Changes the current replication config [Config](https://github.com/headjoe3/Replica/blob/master/docs/Config.md)
 
-* `(Signal) GetValueWillUpdateSignal((any) key)`
+----
+
+## `(Signal) GetValueWillUpdateSignal((any) key)`
 
 Similar to `Instance:GetPropertyChangedSignal()`, this will return a signal that fires _just prior_ to updating a given key from replication, or from a Set call in a Local context, similar to `Replicant.WillUpdate`
 
+----
 
-* `(Signal) GetValueOnUpdateSignal((any) key)`
+## `(Signal) GetValueOnUpdateSignal((any) key)`
 
 Does the same thing as `GetValueWillUpdateSignal`, but fires _after_ a key has ben updated, similar to `Replicant.OnUpdate`
 
-* `(boolean) VisibleToClient((Player) client)`
+----
+
+## `(boolean) VisibleToClient((Player) client)`
 
 Returns true iff a player is subscribed to updates for this Replicant object.
 
-* `(boolean) VisibleToAllClients()`
+----
+
+## `(boolean) VisibleToAllClients()`
 
 Returns true iff all clients are automatically subscribed to updates for this Replicant object.
 
-* `(void) Destroy()`
+----
+
+## `(void) Destroy()`
 
 Disconnects all connected listeners and frees the object up for safe garbage collection. This is automatically called internally when `Set(replicantKey, nil)` or `Unregister(key)` are called.
 
+----
 
 # Events
 
-* `(Signal) WillUpdate((boolean) isLocal)`
+## `(Signal) WillUpdate((boolean) isLocal)`
 
 Called just prior to changing the Replicant's state from a replication update or a `Set` call in a Local context. If this came from a Local `Set` call, `isLocal` will be set to true.
 
-* `(Signal) OnUpdate((boolean) isLocal)`
+----
+
+## `(Signal) OnUpdate((boolean) isLocal)`
 
 Called immediately after changing the Replicant's state from a replication update or a `Set` call in a Local context.
-
-
 
 ----
 
