@@ -2,8 +2,6 @@
 
 Abstract class; cannot be instantiated
 
-![]("/Replicant.png")
-
 The Replicant class is the base class from which Replica's main classes inherit.
 
 In general, a Replicant has
@@ -139,3 +137,5 @@ Called just prior to changing the Replicant's state from a replication update or
 * `(Signal) OnUpdate((boolean) isLocal)`
 
 Called immediately after changing the Replicant's state from a replication update or a `Set` call in a Local context.
+
+![]("https://github.com/headjoe3/Replica/blob/master/Replicant.png")
