@@ -211,15 +211,35 @@ function members:_flushReplicationBuffer()
 		error("Replicator not found for key '" .. self.context.registryKey .. "'; you should not receive errors like this")
 	end
 	
+	statics.RegisterSubclasses()
+	
 	if RunService:IsServer() then
 		if self.config.ServerCanSet then
-			if self:VisibleToAllClients() then
-				replicator:FireAllClients(buffer)
-			else
-				for _, client in pairs(game.Players:GetPlayers()) do
-					if self:VisibleToClient(client) then
-						replicator:FireClient(client, buffer)
+			for _, client in pairs(game.Players:GetPlayers()) do
+				local partialBuffer = {}
+				
+				for _, serialized in pairs(buffer) do
+					local nestedSerialized = serialized
+					local nestedReplicant = self.context.base
+					repeat
+						local topLevel = false
+						local key, newSerialType, newPartialSymbolicValue, preservationId = unpack(nestedSerialized)
+						if statics._subclasses[newSerialType] ~= nil then
+							nestedSerialized = newPartialSymbolicValue[1]
+							nestedReplicant = nestedReplicant.wrapped[key]
+						else
+							topLevel = true
+						end
+					until topLevel or not nestedReplicant
+					
+					if nestedReplicant then
+						if nestedReplicant:VisibleToClient(client) then
+							partialBuffer[#partialBuffer + 1] = serialized
+						end
 					end
+				end
+				if #partialBuffer > 0 then
+					replicator:FireClient(client, partialBuffer)
 				end
 			end
 		else

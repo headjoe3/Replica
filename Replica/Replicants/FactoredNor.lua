@@ -1,7 +1,4 @@
 local FactoredOr = require(script.Parent.FactoredOr)
-local Util = require(script.Parent.Parent.Util)
-local Context = require(script.Parent.Parent.Context)
-local Signal = require(script.Parent.Parent.Signal)
 
 -- class FactoredNor extends FactoredOr
 local statics, members, super = FactoredOr.extend()
