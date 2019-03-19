@@ -138,4 +138,4 @@ Called just prior to changing the Replicant's state from a replication update or
 
 Called immediately after changing the Replicant's state from a replication update or a `Set` call in a Local context.
 
-![]("https://github.com/headjoe3/Replica/blob/master/Replicant.png")
+![](https://github.com/headjoe3/Replica/blob/master/Replicant.png)
