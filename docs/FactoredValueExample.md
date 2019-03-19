@@ -74,3 +74,5 @@ playerData.OnUpdate:Connect(function()
     end
 end)
 ```
+
+![](https://github.com/headjoe3/Replica/blob/master/docs/Screenshot_1.png)
