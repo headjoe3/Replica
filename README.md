@@ -22,7 +22,12 @@ The serialization format supports all Replica objects and most roblox data types
 
 See [documentation](https://github.com/headjoe3/Replica/blob/master/docs/Replica.md)
 
-# Example
+
+# Example 1:
+
+https://github.com/headjoe3/Replica/blob/master/docs/FactoredValueExample.md
+
+# Example 2:
 
 ## Server
 ```lua
