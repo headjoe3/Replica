@@ -18,7 +18,7 @@ function members:_setLocal(key, value, isLocal)
 	if type(key) ~= "string" then
 		error("FactoredSum Replicant keys must be strings")
 	end
-	if type(value) ~= "number" then
+	if value ~= nil and type(value) ~= "number" then
 		error("FactoredSum Replicant values must be numbers")
 	end
 	

@@ -32,10 +32,6 @@ function members:Pairs()
 	return pairs(self.wrapped)
 end
 
-function members:Get(key)
-	return self.wrapped[key]
-end
-
 function members:_setLocal(key, value, isLocal)
 	if type(key) ~= "string" then
 		error("Map Replicant keys must be strings")

@@ -1,5 +1,7 @@
 # Array
 
+An array orders values by sequential numeric integer keys.
+
 ```lua
 local Replica = require(Path.To.Replica)
 local myArray = Replica.Array.new({1, 2, 3})
