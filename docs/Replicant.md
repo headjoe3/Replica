@@ -128,7 +128,12 @@ DataStore:SetAsync(player.UserId, dataStoreObject)
 -- Loading portions of playerData from the datastore
 local dataStoreObject = DataStore:GetAsync(player.UserId)
 local playerData = Replica.Map.new({
-    -- Put player data defaults here
+    Private = Replica.Map.new({
+        -- Put player data defaults here
+    }, {SubscribeAll = false, Whitelist = { player }})
+    Persistent = Replica.Map.new({
+        -- Put player data defaults here
+    })
 })
 
 -- Overwrite saved data
