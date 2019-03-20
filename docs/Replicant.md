@@ -116,13 +116,16 @@ This can be used to allow backwards-compatible data structures that are saved in
 
 Example (only saving portions of the playeData Map object:
 ```lua
--- Saving portions of the data store
+-- Saving portions of playerData to the datastore
 local dataStoreObject = {
     Persistent = playerData:Get("Persistent"):Serialize(),
     Private = playerData:Get("Private"):Serialize()
 }
 
--- Loading portions of the datastore
+. . . 
+
+-- Loading portions of playerData from the datastore
+local dataStoreObject = DataStore:GetAsync(player.UserId)
 local playerData = Replica.Map.new({
     -- Put player data defaults here
 })
