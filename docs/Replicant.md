@@ -121,6 +121,7 @@ local dataStoreObject = {
     Persistent = playerData:Get("Persistent"):Serialize(),
     Private = playerData:Get("Private"):Serialize()
 }
+DataStore:SetAsync(player.UserId, dataStoreObject)
 
 . . . 
 
