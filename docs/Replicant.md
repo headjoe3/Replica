@@ -114,7 +114,7 @@ Merges a serialized form of the Replicant. Old keys will be preserved, while new
 
 This can be used to allow backwards-compatible data structures that are saved in DataStores
 
-Example (only saving portions of the playeData Map object:
+Example used in my own game:
 ```lua
 -- Saving portions of playerData to the datastore
 local dataStoreObject = {
