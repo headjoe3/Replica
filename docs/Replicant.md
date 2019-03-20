@@ -136,7 +136,7 @@ local playerData = Replica.Map.new({
     })
 })
 
--- Overwrite saved data
+-- Overwrite defaults from saved data
 if dataStoreObject ~= nil then
     if dataStoreObject.Persistent ~= nil then
         playerData:Get("Persistent"):MergeSerialized(dataStoreObject.Persistent)
