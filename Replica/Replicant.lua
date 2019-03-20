@@ -177,17 +177,23 @@ function members:Serialize(atKey)
 end
 
 function members:Collate(callback)
+	-- Call the callback normally if we're already collating
 	if self:_inCollatingContext() then
-		error("Replicant:Collate() cannot be called concurrently")
+		callback()
+		return
 	end
+	
+	-- Else spawn a collation thread and expect no yielding
 	self.collating = true
 	
 	FastSpawn(function()
-		callback();
+		local success, err = pcall(callback)
 		
 		self:_flushReplicationBuffer()
 		
 		self.collating = false
+		
+		assert(success, err)
 	end)
 	
 	if self.collating then
@@ -223,7 +229,7 @@ function members:_flushReplicationBuffer()
 					local nestedReplicant = self.context.base
 					repeat
 						local topLevel = false
-						local key, newSerialType, newPartialSymbolicValue, preservationId = unpack(nestedSerialized)
+						local key, newSerialType, newPartialSymbolicValue = unpack(nestedSerialized)
 						if statics._subclasses[newSerialType] ~= nil then
 							if #newPartialSymbolicValue == 1 then
 								nestedSerialized = newPartialSymbolicValue[1]
@@ -278,7 +284,7 @@ function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
 	end
 	
 	for _, serialized in pairs(buffer) do
-		local key, newSerialType, newPartialSymbolicValue, preservationId = unpack(serialized)
+		local key, _, newPartialSymbolicValue, preservationId = unpack(serialized)
 		
 		if self.valueWillUpdateSignals[key] then
 			self.valueWillUpdateSignals[key]:Fire(isLocal)
@@ -342,6 +348,12 @@ function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
 end
 
 function members:_bufferRawUpdate(wrappedKey, wrappedValue)
+	if not self.context.active
+		or self.context.registryKey == nil
+		or self:_inLocalContext() then
+		return
+	end
+	
 	local qualifiedBuffer = self.context.base.replicationBuffer
 	
 	local keyIndex = 1
@@ -362,10 +374,6 @@ function members:_bufferRawUpdate(wrappedKey, wrappedValue)
 		base = nextBase
 	end
 	
-	if not self.context.active or self.context.registryKey == nil then
-		error("Attempt to replicate from an unregistered Replicant; use Replica.Register first!")
-	end
-	
 	if type(wrappedValue) == "table" and rawget(wrappedValue, "_isReplicant") then
 		qualifiedBuffer[#qualifiedBuffer + 1] = wrappedValue:Serialize(wrappedKey)
 	else
@@ -374,12 +382,22 @@ function members:_bufferRawUpdate(wrappedKey, wrappedValue)
 end
 
 function members:Local(callback)
+	-- If already in a local context, run the callback normally
 	if self:_inLocalContext() then
-		error("Replicant:Local() cannot be called concurrently")
+		callback()
+		return
 	end
+	
+	-- Else create a new local context
 	self.localContext = true
 	
-	FastSpawn(function() callback(); self.localContext = false end)
+	FastSpawn(function()
+		local success, err = pcall(callback)
+		
+		self.localContext = false
+		
+		assert(success, err)
+	end)
 	
 	if self.localContext then
 		error("Yielding is not allowed when calling Replicant:Local()")
@@ -428,6 +446,79 @@ end
 
 function members:VisibleToAllClients()
 	return self.config.SubscribeAll and #self.config.Blacklist == 0
+end
+
+function members:Inspect(maxDepth, currentDepth, key)
+	maxDepth = maxDepth or math.huge
+	currentDepth = currentDepth or 0
+	
+	if currentDepth > maxDepth then return end
+	local currentIndent = string.rep("    ", currentDepth)
+	local nextIndent = string.rep("    ", currentDepth + 1)
+	
+	print(currentIndent .. (key and (key .. " = ") or "") .. self._class.SerialType .. " {")
+	
+	if currentDepth > maxDepth then return end
+	for k, v in pairs(self.wrapped) do
+		if type(v) == "table" and rawget(v, "_isReplicant") == true then
+			v:Inspect(maxDepth, currentDepth + 1, k)
+		else
+			if type(v) == "table" then
+				Util.Inspect(v, maxDepth, currentDepth + 1, k)
+			else
+			    local key_str = tostring(k)
+			    if type(k) == "number" then
+			      key_str = '[' .. key_str .. ']'
+				end
+				
+			    local value_str
+				if type(v) == "string" then
+					value_str = "'" .. tostring(v) .. "'"
+				else
+					value_str = tostring(v)
+				end
+				
+				print(nextIndent .. tostring(key_str) .. " = " .. value_str .. ",")
+			end
+		end
+	end
+	
+	print(currentIndent .. "}")
+end
+
+function members:MergeSerialized(serialized)
+	local _, _, wrapped = unpack(serialized)
+	
+	self:_applyUpdate(wrapped)
+	
+	local qualifiedBuffer = self.context.base.replicationBuffer
+	
+	if self.context.active and not self:_inLocalContext() then
+		local keyIndex = 1
+		local key = self.context.keyPath[keyIndex]
+		local base = self.context.base
+		while key ~= nil and base ~= nil do
+			local nextBase = base.wrapped[key]
+			if nextBase == nil then
+				error("Invalid keypath '" .. table.concat(self.context.keyPath, ".") .. "'; you should not receive errors like this")
+			end
+			
+			local nextBuffer = {}
+			qualifiedBuffer[#qualifiedBuffer + 1] = {key, nextBase._class.SerialType, nextBuffer, nextBase._preservationId}
+			qualifiedBuffer = nextBuffer
+			
+			keyIndex = keyIndex + 1
+			key = self.context.keyPath[keyIndex]
+			base = nextBase
+		end
+		for _, serializedKeyChange in pairs(wrapped) do
+			qualifiedBuffer[#qualifiedBuffer + 1] = serializedKeyChange
+		end
+		
+		if not self:_inCollatingContext() then
+			self:_flushReplicationBuffer()
+		end
+	end
 end
 
 function members:Destroy()

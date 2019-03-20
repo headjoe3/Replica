@@ -232,7 +232,7 @@ function Util.Deserialize(serialized)
 	elseif serialType == "Table" then
 		local tab = {}
 		for _, serialValue in pairs(symbolicValue) do
-			tab[serialValue[2]] = Util.Deserialize(serialValue)
+			tab[serialValue[1]] = Util.Deserialize(serialValue)
 		end
 		return tab
 	elseif serialType == "Axes" then
@@ -348,6 +348,38 @@ local nextId = 0
 Util.NextId = function()
 	nextId = nextId + 1
 	return nextId
+end
+
+function Util.Inspect(tab, maxDepth, currentDepth, key)
+	maxDepth = maxDepth or math.huge
+	currentDepth = currentDepth or 0
+	
+	if currentDepth > maxDepth then return end
+	local currentIndent = string.rep("    ", currentDepth)
+	local nextIndent = string.rep("    ", currentDepth + 1)
+	
+	print(currentIndent .. (key and (key .. " = ") or "") .. tostring(tab) .. " {")
+	
+	for k, v in pairs(tab) do
+		if type(v) == "table" then
+			Util.Inspect(v, maxDepth, currentDepth + 1)
+		else
+		    local key_str = tostring(k)
+		    if type(k) == "number" then
+		      key_str = '[' .. key_str .. ']'
+			end
+			
+		    local value_str
+			if type(v) == "string" then
+				value_str = "'" .. tostring(v) .. "'"
+			else
+				value_str = tostring(v)
+			end
+			
+			print(nextIndent .. tostring(key_str) .. " = " .. value_str .. ",")
+		end
+	end
+	print(currentIndent .. "}")
 end
 
 return Util

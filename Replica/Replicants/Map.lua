@@ -1,8 +1,4 @@
 local Replicant = require(script.Parent.Parent.Replicant)
-local Util = require(script.Parent.Parent.Util)
-local Context = require(script.Parent.Parent.Context)
-
-local RunService = game:GetService("RunService")
 
 -- class Map extends Replicant
 local statics, members = Replicant.extend()

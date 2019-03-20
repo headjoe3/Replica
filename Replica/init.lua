@@ -1,3 +1,10 @@
+-- Robert Tulley
+-- MIT license
+-- See Documentation: https://github.com/headjoe3/Replica/blob/master/docs/Replica.md
+
+
+
+
 local staticContainers = {
 	game:GetService("Workspace"),
 	game:GetService("ReplicatedStorage"),

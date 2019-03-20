@@ -1,6 +1,4 @@
 local Replicant = require(script.Parent.Parent.Replicant)
-local Util = require(script.Parent.Parent.Util)
-local Context = require(script.Parent.Parent.Context)
 local Signal = require(script.Parent.Parent.Signal)
 
 -- class FactoredSum extends Replicant

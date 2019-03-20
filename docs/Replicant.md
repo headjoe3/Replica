@@ -108,6 +108,38 @@ Serializes the Replicant object using the Replica format, which can be stored in
 
 ----
 
+### `(void) MergeSerialized((table) serialized)`
+
+Merges a serialized form of the Replicant. Old keys will be preserved, while new keys will be added or overwritten.
+
+This can be used to allow backwards-compatible data structures that are saved in DataStores
+
+Example (only saving portions of the playeData Map object:
+```lua
+-- Saving portions of the data store
+local dataStoreObject = {
+    Persistent = playerData:Get("Persistent"):Serialize(),
+    Private = playerData:Get("Private"):Serialize()
+}
+
+-- Loading portions of the datastore
+local playerData = Replica.Map.new({
+    -- Put player data defaults here
+})
+
+-- Overwrite saved data
+if dataStoreObject ~= nil then
+    if dataStoreObject.Persistent ~= nil then
+        playerData:Get("Persistent"):MergeSerialized(dataStoreObject.Persistent)
+    end
+    if dataStoreObject.Private ~= nil then
+        playerData:Get("Private"):MergeSerialized(dataStoreObject.Private)
+    end
+end
+```
+
+----
+
 ### `(table) GetConfig()`
 
 Returns the current replication [Config](https://github.com/headjoe3/Replica/blob/master/docs/Config.md)
@@ -141,6 +173,12 @@ Returns true iff a player is subscribed to updates for this Replicant object.
 ### `(boolean) VisibleToAllClients()`
 
 Returns true iff all clients are automatically subscribed to updates for this Replicant object.
+
+----
+
+### `(void) Inspect([number] maxDepth)`
+
+Recursively prints the contents of a Replicant object to the output console in a human-readable format.
 
 ----
 
