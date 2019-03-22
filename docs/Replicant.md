@@ -114,20 +114,29 @@ Merges a serialized form of the Replicant. Old keys will be preserved, while new
 
 This can be used to allow backwards-compatible data structures that are saved in DataStores
 
-Example (only saving portions of the playeData Map object:
+Example used in my own game:
 ```lua
--- Saving portions of the data store
+-- Saving portions of playerData to the datastore
 local dataStoreObject = {
     Persistent = playerData:Get("Persistent"):Serialize(),
     Private = playerData:Get("Private"):Serialize()
 }
+DataStore:SetAsync(player.UserId, dataStoreObject)
 
--- Loading portions of the datastore
+. . . 
+
+-- Loading portions of playerData from the datastore
+local dataStoreObject = DataStore:GetAsync(player.UserId)
 local playerData = Replica.Map.new({
-    -- Put player data defaults here
+    Private = Replica.Map.new({
+        -- Put player data defaults here
+    }, {SubscribeAll = false, Whitelist = { player }})
+    Persistent = Replica.Map.new({
+        -- Put player data defaults here
+    })
 })
 
--- Overwrite saved data
+-- Overwrite defaults from saved data
 if dataStoreObject ~= nil then
     if dataStoreObject.Persistent ~= nil then
         playerData:Get("Persistent"):MergeSerialized(dataStoreObject.Persistent)
