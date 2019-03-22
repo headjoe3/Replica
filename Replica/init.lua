@@ -345,7 +345,7 @@ else
 		
 		for _, client in pairs(game.Players:GetPlayers()) do
 			if replicant:VisibleToClient(client) and sentInitialReplication[client] then
-				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key), replicant.config)
+				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
 			end
 		end
 	end)
@@ -369,7 +369,7 @@ else
 	game.Players.PlayerAdded:Connect(function(client)
 		for key, replicant in pairs(registry) do
 			if replicant:VisibleToClient(client) then
-				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key), replicant.config)
+				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
 			end
 		end
 		sentInitialReplication[client] = true

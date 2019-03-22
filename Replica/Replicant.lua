@@ -190,12 +190,16 @@ function members:_setLocal(key)
 end
 
 -- Serialized values should be in the form {key, type, symbolic_value, [preservation_id]}
-function members:Serialize(atKey)
+function members:Serialize(atKey, forClient)
+	if (forClient ~= nil) and (not self:VisibleToClient(forClient)) then
+		return nil
+	end
+	
 	local symbolicValue = {}
 	
 	for k, v in pairs(self.wrapped) do
 		if typeof(v) == "table" and rawget(v, "_isReplicant") then
-			symbolicValue[#symbolicValue + 1] = v:Serialize(k)
+			symbolicValue[#symbolicValue + 1] = v:Serialize(k, forClient)
 		else
 			symbolicValue[#symbolicValue + 1] = Util.Serialize(k, v)
 		end
