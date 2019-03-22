@@ -24,6 +24,20 @@ function Util.DeepCopy(tab)
 	return newTab
 end
 
+function Util.DeepCompare(val1, val2)
+	if type(val1) == "table" and type(val2) == "table" then
+		for k, v in pairs(val1) do
+			if not Util.DeepCompare(v, val2[k]) then
+				return false
+			end
+		end
+		
+		return true
+	else
+		return val1 == val2
+	end
+end
+
 function Util.OverrideDefaults(defaults, tab)
 	local newTab = Util.DeepCopy(defaults)
 	

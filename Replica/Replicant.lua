@@ -35,13 +35,17 @@ function members:_hookListeners()
 			-- Fail silently if the client does not have the correct permissions
 			if self:VisibleToClient(client) then
 				if self.config.ClientCanSet then
-					self:_applyUpdate(buffer)
+					if not self:_matchPredictions(buffer) then
+						self:_applyUpdate(buffer)
+					end
 				end
 			end
 		end))
 	else
 		table.insert(self._connections, replicator.OnClientEvent:Connect(function(buffer)
-			self:_applyUpdate(buffer)
+			if not self:_matchPredictions(buffer) then
+				self:_applyUpdate(buffer)
+			end
 		end))
 	end
 end
@@ -100,7 +104,11 @@ function members:_inCollatingContext()
 end
 
 function members:_inLocalContext()
-	if self.localContext then
+	if not self:CanReplicate() then
+		return true
+	end
+	
+	if self.explicitLocalContext then
 		return true
 	end
 	
@@ -125,6 +133,10 @@ function members:Set(key, value)
 	local isLocal = self:_inLocalContext()
 	
 	self.WillUpdate:Fire(isLocal)
+	if self._destroyed then
+		error("Replicants should not be destroyed on WillUpdate")
+	end
+	
 	local valueWillUpdateSignal = self.valueWillUpdateSignals[key]
 	if valueWillUpdateSignal then
 		valueWillUpdateSignal:Fire(isLocal)
@@ -150,11 +162,27 @@ function members:Set(key, value)
 		end
 	end
 	
-	self.OnUpdate:Fire(isLocal)
 	local valueOnUpdateSignal = self.valueOnUpdateSignals[key]
+	
+	-- From this point on, the object could be destroyed
+
+	self.OnUpdate:Fire(isLocal)
 	if valueOnUpdateSignal then
 		valueOnUpdateSignal:Fire(isLocal)
 	end
+end
+
+function members:Predict(key, value)
+	if self:CanReplicate() then
+		error("Predict can only be called on a side of the network that does not replicate")
+	end
+	if type(value) == "table" and rawget(value, "_isReplicant") then
+		error("Predict cannot be called for other Replicant values")
+	end
+	
+	self.predictionBuffer[#self.predictionBuffer + 1] = {key, value}
+	
+	self:Set(key, value)
 end
 
 function members:_setLocal(key)
@@ -262,6 +290,61 @@ function members:_flushReplicationBuffer()
 			error("Replication is not allowed on the client for this configuration (Consider wrapping call in :Local())")
 		end
 	end
+end
+
+function members:_matchPredictions(buffer)
+	if #self.predictionBuffer == 0 then
+		return false
+	end
+	
+	statics.RegisterSubclasses()
+	
+	local consumedPrediction = false
+	local predictionBuffer = self.predictionBuffer
+	self.predictionBuffer = {}
+	for i = 1, #predictionBuffer do
+		local nestedSerialized = buffer[i]
+		if not nestedSerialized then
+			if consumedPrediction then
+				self.predictionBuffer = {select(i, unpack(predictionBuffer))}
+				return true
+			end
+		end
+		
+		local nestedReplicant = self.context.base
+		repeat
+			local topLevel = false
+			local key, newSerialType, newPartialSymbolicValue = unpack(nestedSerialized)
+			if statics._subclasses[newSerialType] ~= nil then
+				if #newPartialSymbolicValue == 1 then
+					nestedSerialized = newPartialSymbolicValue[1]
+					nestedReplicant = nestedReplicant.wrapped[key]
+				else
+					topLevel = true
+				end
+			else
+				topLevel = true
+			end
+		until topLevel or not nestedReplicant or not nestedSerialized
+		
+		if nestedReplicant then
+			local predictedKey = predictionBuffer[i][1]
+			local updatedKey = nestedSerialized[1]
+			
+			if predictedKey == updatedKey then
+				local predictedValue = predictionBuffer[i][2]
+				local actualValue = Util.Deserialize(nestedSerialized)
+				
+				if Util.DeepCompare(predictedValue, actualValue) then
+					consumedPrediction = true
+				else
+					return false
+				end
+			end
+		end
+	end
+	
+	return consumedPrediction
 end
 
 function members:_applyUpdate(buffer, destroyList, relocatedList, updateList)
@@ -389,17 +472,17 @@ function members:Local(callback)
 	end
 	
 	-- Else create a new local context
-	self.localContext = true
+	self.explicitLocalContext = true
 	
 	FastSpawn(function()
 		local success, err = pcall(callback)
 		
-		self.localContext = false
+		self.explicitLocalContext = false
 		
 		assert(success, err)
 	end)
 	
-	if self.localContext then
+	if self.explicitLocalContext then
 		error("Yielding is not allowed when calling Replicant:Local()")
 	end
 end
@@ -446,6 +529,14 @@ end
 
 function members:VisibleToAllClients()
 	return self.config.SubscribeAll and #self.config.Blacklist == 0
+end
+
+function members:CanReplicate()
+	if RunService:IsServer() then
+		return self.config.ServerCanSet
+	else
+		return self.config.ClientCanSet
+	end
 end
 
 function members:Inspect(maxDepth, currentDepth, key)
@@ -552,6 +643,8 @@ function members:Destroy()
 		signal:Destroy()
 	end
 	self.valueOnUpdateSignals = nil
+	
+	self._destroyed = true
 end
 
 -- Serialized values should be in the form {key, type, symbolic_value, [preservation_id]}
@@ -606,12 +699,14 @@ function statics.constructor(self, partialConfig, context)
 		self.partialConfig = partialConfig
 	end
 	self.collating = false
-	self.localContext = false
+	self.explicitLocalContext = false
 	self.wrapped = {}
 	self.context = context or Context.new(self, {}, self.config, false, nil)
 	self.replicationBuffer = {}
+	self.predictionBuffer = {}
 	self._isReplicant = true
 	self._connections = nil
+	self._destroyed = false
 	
 	self.WillUpdate = Signal.new()
 	self.OnUpdate = Signal.new()
