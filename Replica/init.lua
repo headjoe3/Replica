@@ -344,7 +344,7 @@ else
 		end
 		
 		for _, client in pairs(game.Players:GetPlayers()) do
-			if replicant:VisibleToClient(client) and sentInitialReplication[client] then
+			if replicant:VisibleToClient(client) and not sentInitialReplication[client] then
 				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
 			end
 		end
