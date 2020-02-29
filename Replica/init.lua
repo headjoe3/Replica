@@ -344,7 +344,7 @@ else
 		end
 		
 		for _, client in pairs(game.Players:GetPlayers()) do
-			if replicant:VisibleToClient(client) and not sentInitialReplication[client] then
+			if replicant:VisibleToClient(client) and sentInitialReplication[client] then
 				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
 			end
 		end
@@ -364,16 +364,26 @@ else
 				baseReplicantEvent:FireClient(client, key, nil)
 			end
 		end
-	end)
+    end)
+    
+    local function sendInitReplicationToClient(client)
+        for key, replicant in pairs(registry) do
+            if replicant:VisibleToClient(client) then
+                baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
+            end
+        end
+        sentInitialReplication[client] = true
+    end
 	
-	game.Players.PlayerAdded:Connect(function(client)
-		for key, replicant in pairs(registry) do
-			if replicant:VisibleToClient(client) then
-				baseReplicantEvent:FireClient(client, key, replicant:Serialize(key, client), replicant.config)
-			end
-		end
-		sentInitialReplication[client] = true
-	end)
+    game.Players.PlayerAdded:Connect(function(client)
+        sendInitReplicationToClient(client)
+    end)
+    
+    -- For any players already on the server at the time this module runs (as this can be required after players have joined)
+    -- invoke initial replication of replicants
+    for _, client in pairs(game.Players:GetPlayers()) do
+        sendInitReplicationToClient(client)
+    end
 	
 	game.Players.PlayerRemoving:Connect(function(client)
 		sentInitialReplication[client] = nil
