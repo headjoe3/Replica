@@ -217,7 +217,7 @@ function members:Collate(callback)
 	-- Else spawn a collation thread and expect no yielding
 	self.collating = true
 	
-	coroutine.wrap(function()
+	coroutine.resume(coroutine.create(function()
 		local success, err = pcall(callback)
 		
 		self:_flushReplicationBuffer()
@@ -225,7 +225,7 @@ function members:Collate(callback)
 		self.collating = false
 		
 		assert(success, err)
-	end)()
+	end))
 	
 	if self.collating then
 		error("Yielding is not allowed when calling Replicant:Collate()")
@@ -477,13 +477,13 @@ function members:Local(callback)
 	-- Else create a new local context
 	self.explicitLocalContext = true
 	
-	coroutine.wrap(function()
+	coroutine.resume(coroutine.create(function()
 		local success, err = pcall(callback)
 		
 		self.explicitLocalContext = false
 		
 		assert(success, err)
-	end)()
+	end))
 	
 	if self.explicitLocalContext then
 		error("Yielding is not allowed when calling Replicant:Local()")
