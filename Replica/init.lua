@@ -182,14 +182,14 @@ function Replica.WaitForRegistered(keyRef, timeout)
 	end)
 	
 	if timeout ~= nil then
-		FastSpawn(function()
+		coroutine.wrap(function()
 			wait(timeout)
 			if not gotReturnValue then
 				gotReturnValue = true
 				
 				SafeCoro.Resume(thread, nil)
 			end
-		end)
+		end)()
 	end
 
 	local returnVal = SafeCoro.Yield()
@@ -214,7 +214,7 @@ Replica.ReplicantUnregistered = Signal.new()
 
 -- Register replicants created on the server
 if RunService:IsClient() then
-	FastSpawn(function()
+	coroutine.wrap(function()
 		script:WaitForChild("Replicators")
 		local baseReplicantEvent = script:WaitForChild("_ReplicateBaseReplicant")
 		local getGuidFunction = script:WaitForChild("_GetRegisteredGUID")
@@ -288,7 +288,7 @@ if RunService:IsClient() then
 		end
 		CollectionService:GetInstanceAddedSignal(COLLECTION_TAG):Connect(handleCollectionInstance)
 		for _, instance in pairs(CollectionService:GetTagged(COLLECTION_TAG)) do
-			FastSpawn(handleCollectionInstance, instance)
+			coroutine.wrap(handleCollectionInstance)(instance)
 		end
 		
 		-- Listen to the server for any registered keys
@@ -321,7 +321,7 @@ if RunService:IsClient() then
 				end
 			end
 		end)
-	end)
+	end)()
 else
 	local baseReplicantEvent = Instance.new("RemoteEvent")
 	baseReplicantEvent.Name = "_ReplicateBaseReplicant"
