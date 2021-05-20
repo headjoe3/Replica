@@ -30,7 +30,6 @@ local Replicant = require(script.Replicant)
 local Context = require(script.Context)
 local Signal = require(script.Signal)
 local SafeCoro = require(script.SafeCoro)
-local FastSpawn = require(script.FastSpawn)
 
 local INSTANCE_GUID_PREFIX = "_InstanceGuid_"
 local NewInstanceGuid = function()
