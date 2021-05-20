@@ -1,12 +1,12 @@
---!strict
+--!nocheck
 
 local BF = Instance.new('BindableFunction')
 
-BF.OnInvoke = function(cb: any): any
+BF.OnInvoke = function(cb)
 	return cb()
 end
 
-local function FastSpawn(func: any ...)
+local function FastSpawn(func, ...)
 	local args = { ... }
 	coroutine.resume(
 		coroutine.create(function()
