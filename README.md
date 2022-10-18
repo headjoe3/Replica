@@ -60,7 +60,7 @@ end)
 
 -- The server can make changes to the replicated data using setter functions, and it
 -- will automatically be replicated to subscribed clients
-while wait(1) do
+while true do
     for _, player in pairs(game.Players:GetPlayers()) do
         local playerData = Replica.GetRegistered(player)
         if playerData ~= nil then
@@ -83,6 +83,7 @@ while wait(1) do
             end)
         end
     end
+    task.wait(1)
 end
 ```
 
